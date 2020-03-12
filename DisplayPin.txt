@@ -1,0 +1,2 @@
+MOSI	4 ESPheader
+SCLK	3 ESPheader
