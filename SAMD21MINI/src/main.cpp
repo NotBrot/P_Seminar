@@ -66,7 +66,7 @@ Ucglib_ST7735_18x128x160_HWSPI u8g2(/*cd=*/9, /*cs=*/10, /*reset=*/8);
 #elif defined(SCREEN_SSD1306)
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(/*rotation=*/U8G2_R0, /*reset=*/U8X8_PIN_NONE);
 #elif defined(SCREEN_SSD1309)
-U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI(/*rotation=*/U8G2_R0, /*cs=*/10, /*dc=*/9, /*reset=*/8);
+U8G2_SSD1309_128X64_NONAME0_F_4W_HW_SPI u8g2(/*rotation=*/U8G2_R0, /*cs=*/10, /*dc=*/9, /*reset=*/8);
 #else
 #pragma GCC error "no display defined"
 #endif
