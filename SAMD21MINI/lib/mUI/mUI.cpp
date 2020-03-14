@@ -29,12 +29,7 @@ void mUI::Label::draw(Window &parent)
 
 void mUI::ListBox::draw(Window &parent)
 {
-  drawListBox(pos.x, pos.y, items, size, list_index);
-}
-
-void mUI::ListBox::update(Window &parent)
-{
-  if (parent.button_states.bit.A)
+  if (parent.button_states.bit.A && list_index > 0)
   {
     list_index--;
     redraw = true;
@@ -49,11 +44,7 @@ void mUI::ListBox::update(Window &parent)
     items[list_index].on_select(parent);
     redraw = true;
   }
-  if (redraw)
-  {
-    draw(parent);
-    redraw = false;
-  }
+  drawListBox(pos.x, pos.y, items, size, list_index);
 }
 
 // void mUI::ListBox::draw()

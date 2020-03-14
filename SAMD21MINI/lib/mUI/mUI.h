@@ -171,7 +171,6 @@ public:
       : SelectableWidget(pos, vec2(0, 0), 0, nullptr), size(size), items(items) {}
 
   void draw(Window &parent) override;
-  void update(Window &parent) override;
 };
 
 class Button : public SelectableWidget
