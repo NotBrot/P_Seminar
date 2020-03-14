@@ -189,12 +189,11 @@ void mUI::clearScreen()
 
 void mUI::drawMenuFrame(const char *title)
 {
-  screen->setFont(u8g2_font_5x8_mr);
+  screen->drawFrame(0, 12, WIDTH, HEIGHT - 12);
 
-  screen->drawFrame(0, 10, WIDTH, HEIGHT - 10);
-
-  screen->setCursor(0, 0);
+  screen->setFont(u8g2_font_6x10_mf); // Bigger Font
   screen->drawUTF8(0, 1, title);
+  screen->setFont(u8g2_font_5x8_mf);
 
   // screen->drawLine(0, 20, WIDTH - 1, 20);
 }
