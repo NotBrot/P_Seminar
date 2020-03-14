@@ -191,15 +191,14 @@ void mUI::drawMenuFrame(const char *title)
   screen->drawFrame(0, 10, WIDTH, HEIGHT - 10);
 
   screen->setCursor(0, 0);
-  screen->print(title);
+  screen->drawUTF8(0, 1, title);
 
   // screen->drawLine(0, 20, WIDTH - 1, 20);
 }
 
 void mUI::drawStatus(const char status)
 {
-  screen->setCursor(WIDTH - 6, 1);
-  screen->print(status);
+  screen->drawGlyph(WIDTH - 9, 1, status);
 }
 
 void mUI::drawButton(const uint16_t pos_x, uint16_t pos_y, uint16_t w, uint16_t h, const char *text, bool selected)
@@ -214,15 +213,14 @@ void mUI::drawButton(const uint16_t pos_x, uint16_t pos_y, uint16_t w, uint16_t 
   if (selected)
     screen->drawFrame(pos_x + 2, pos_y + 2, w - 4, h - 4);
 
-  screen->setCursor(pos_x + 3, pos_y + 3);
-  screen->print(text);
+  screen->drawUTF8(pos_x + 3, pos_y + 3, text);
 }
 
 void mUI::drawText(const uint16_t pos_x, const uint16_t pos_y, const char *text)
 {
   // screen->setCursor(pos_x + 3, pos_y + 3);
   // screen->print(text);
-  screen->drawStr(pos_x + 3, pos_y + 3, text);
+  screen->drawUTF8(pos_x + 3, pos_y + 3, text);
 }
 
 void mUI::drawListBox(const uint16_t pos_x, const uint16_t pos_y, const ListItem list_items[], const size_t size, const size_t current_index)
@@ -238,8 +236,8 @@ void mUI::drawListBox(const uint16_t pos_x, const uint16_t pos_y, const ListItem
       screen->setCursor(pos_x, pos_y + i * 10);
       screen->print("-");
     }
-    screen->setCursor(pos_x + 5, pos_y + i * 10);
-    screen->print(list_items[i].text);
+    screen->drawUTF8(pos_x + 2, pos_y + i * 10, list_items[i].text);
+
     screen->drawLine(0, pos_y + i * 10 + 9, WIDTH - 1, pos_y + i * 10 + 9);
   }
 }
@@ -280,8 +278,7 @@ void mUI::drawPopup(const char *message, const uint16_t pos_x, const uint16_t po
   line = strtok(msg_temp, "\n");
   while (line != nullptr)
   {
-    screen->setCursor(pos_x + 5, pos_y + 5 + lineno * 10);
-    screen->print(line);
+    screen->drawUTF8(pos_x + 5, pos_y + 5 + lineno * 10, line);
     line = strtok(nullptr, "\n");
     lineno++;
   }
