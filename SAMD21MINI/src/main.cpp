@@ -150,7 +150,7 @@ void setup()
   mUI::begin(&u8g2);
 
 #if defined(USE_U8G2)
-  u8g2.setFont(u8g2_font_5x8_mr);
+  u8g2.setFont(u8g2_font_5x8_mf);
   u8g2.enableUTF8Print();
   u8g2.clearBuffer();
 #endif

@@ -174,7 +174,7 @@ void mUI::begin(U8G2 *display)
 {
   screen = display;
   screen->clearDisplay();
-  screen->setFont(u8g2_font_5x8_mr);
+  screen->setFont(u8g2_font_5x8_mf);
   screen->setFontPosTop(); // Set reference position for chars to top-left
 }
 
