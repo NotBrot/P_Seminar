@@ -205,10 +205,6 @@ void mUI::drawStatus(const char status)
 
 void mUI::drawButton(const uint16_t pos_x, uint16_t pos_y, uint16_t w, uint16_t h, const char *text, bool selected)
 {
-  // Clear old button
-  screen->setDrawColor(0);
-  screen->drawBox(pos_x, pos_y, w, h);
-
   screen->setDrawColor(1);
   screen->drawFrame(pos_x, pos_y, w, h);
 
