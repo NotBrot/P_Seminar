@@ -193,6 +193,7 @@ class Label : public Widget
 {
 public:
   const char *text = "";
+  const uint8_t *font = u8g2_font_5x8_mf;
 
   Label() {}
   Label(vec2 pos, vec2 size, const char *text)

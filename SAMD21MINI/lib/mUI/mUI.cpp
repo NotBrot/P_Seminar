@@ -22,7 +22,9 @@ void mUI::Widget::update(mUI::Window &parent)
 
 void mUI::Label::draw(Window &parent)
 {
+  screen->setFont(font);
   drawText(pos.x, pos.y, text);
+  screen->setFont(u8g2_font_5x8_mf);
 }
 
 void mUI::ListBox::draw(Window &parent)
