@@ -175,7 +175,7 @@ public:
 
   ListBox() {}
   ListBox(uint8_t size, ListItem items[])
-      : SelectableWidget(vec2(2, 12), vec2(0, 0), 0, nullptr), size(size), items(items) {}
+      : SelectableWidget(vec2(2, 14), vec2(0, 0), 0, nullptr), size(size), items(items) {}
   ListBox(vec2 pos, uint8_t size, ListItem items[])
       : SelectableWidget(pos, vec2(0, 0), 0, nullptr), size(size), items(items) {}
 
