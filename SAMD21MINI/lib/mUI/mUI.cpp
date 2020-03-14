@@ -149,7 +149,10 @@ void mUI::Window::update(bool force /*=false*/)
 
 void mUI::MessageBox::show()
 {
+  screen->clearBuffer();
+  parent.update(true);
   drawPopup(message, 5, 20);
+  screen->sendBuffer();
   delay(500);
 
 #if defined(USE_UCGLIB)
