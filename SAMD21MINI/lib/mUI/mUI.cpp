@@ -228,6 +228,13 @@ void mUI::drawListBox(const uint16_t pos_x, const uint16_t pos_y, const ListItem
     }
     screen->drawUTF8(pos_x + 2, pos_y + i * 10, list_items[i].text);
 
+    if (list_items[i].is_checkbox)
+    {
+      screen->setFont(u8g2_font_open_iconic_all_1x_t);
+      screen->drawGlyph(WIDTH - 10, pos_y + i * 10, list_items[i].checked ? 0x73 : 0x11b);
+      screen->setFont(u8g2_font_5x8_mf);
+    }
+    
     screen->setDrawColor(1);
     screen->drawLine(0, pos_y + i * 10 + 9, WIDTH - 1, pos_y + i * 10 + 9);
   }

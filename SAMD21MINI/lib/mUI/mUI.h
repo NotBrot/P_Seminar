@@ -141,6 +141,10 @@ class ListItem : public SelectableWidget
 public:
   const char *text;
   
+  bool is_checkbox = false;
+  bool checked = false;
+
+  ListItem() {}
 
   ListItem(const char *text)
       : SelectableWidget(WidgetType::LISTITEM, vec2(0, 0), vec2(0, 0), 0, nullptr), text(text) {}
