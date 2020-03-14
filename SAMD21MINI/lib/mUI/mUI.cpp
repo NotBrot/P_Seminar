@@ -216,17 +216,19 @@ void mUI::drawListBox(const uint16_t pos_x, const uint16_t pos_y, const ListItem
 {
   for (size_t i = 0; i < size; ++i)
   {
+    screen->setDrawColor(1);
     if (i > 4) // ListBox can only hold 5 items
     {
       break;
     }
     if (i == current_index)
     {
-      screen->setCursor(pos_x, pos_y + i * 10);
-      screen->print("-");
+      screen->drawBox(pos_x + 1, pos_y + i * 10 - 1, WIDTH - 1, 10);
+      screen->setDrawColor(0);
     }
     screen->drawUTF8(pos_x + 2, pos_y + i * 10, list_items[i].text);
 
+    screen->setDrawColor(1);
     screen->drawLine(0, pos_y + i * 10 + 9, WIDTH - 1, pos_y + i * 10 + 9);
   }
 }
