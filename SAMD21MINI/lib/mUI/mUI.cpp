@@ -87,7 +87,7 @@ void mUI::Window::update(bool force /*=false*/)
     if (widgets[current_index]->type == WidgetType::SELECTABLEWIDGET)
     {
       s = (SelectableWidget *)(widgets[current_index]);
-      if (s && s->on_select)
+      if (s->on_select)
         s->on_select(*this);
     }
   }
@@ -100,8 +100,7 @@ void mUI::Window::update(bool force /*=false*/)
       if (widgets[current_index]->type == WidgetType::SELECTABLEWIDGET)
       {
         s = (SelectableWidget *)(widgets[i]);
-        if (s)
-          s->selected = s->index == current_index;
+        s->selected = s->index == current_index;
       }
     }
     redraw_all = false;
@@ -113,16 +112,14 @@ void mUI::Window::update(bool force /*=false*/)
     if (widgets[current_index]->type == WidgetType::SELECTABLEWIDGET)
     {
       s = (SelectableWidget *)(widgets[previous_index]);
-      if (s)
-        s->selected = s->index == current_index;
+      s->selected = s->index == current_index;
     }
 
     widgets[current_index]->redraw = true;
     if (widgets[current_index]->type == WidgetType::SELECTABLEWIDGET)
     {
       s = (SelectableWidget *)(widgets[current_index]);
-      if (s)
-        s->selected = s->index == current_index;
+      s->selected = s->index == current_index;
     }
 
     // for (int i = 0; i < num_of_widgets; i++)
