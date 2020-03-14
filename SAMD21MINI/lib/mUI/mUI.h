@@ -68,13 +68,14 @@ class Widget
 public:
   vec2 pos = {0, 0}, size = {0, 0};
   bool redraw = true;
-  WidgetType type = WidgetType::WIDGET;
+  WidgetType type;
   virtual void draw(Window &parent);
   virtual void update(Window &parent);
 
-  Widget() {}
-  Widget(vec2 pos, vec2 size)
-      : pos(pos), size(size) {}
+  Widget(WidgetType type)
+      : type(type) {}
+  Widget(WidgetType type, vec2 pos, vec2 size)
+      : pos(pos), size(size), type(type) {}
 };
 
 class Window
@@ -109,12 +110,16 @@ class SelectableWidget : public Widget
 public:
   uint8_t index = 0;
   bool selected = false;
-  WidgetType type = WidgetType::SELECTABLEWIDGET;
   void (*on_select)(Window &) = nullptr;
 
-  SelectableWidget() {}
+  SelectableWidget()
+      : Widget(WidgetType::SELECTABLEWIDGET) {}
+  SelectableWidget(WidgetType type)
+      : Widget(type) {}
   SelectableWidget(vec2 pos, vec2 size, uint8_t index, void (*on_select)(Window &))
-      : Widget(pos, size), index(index), on_select(on_select) {}
+      : Widget(WidgetType::SELECTABLEWIDGET, pos, size), index(index), on_select(on_select) {}
+  SelectableWidget(WidgetType type, vec2 pos, vec2 size, uint8_t index, void (*on_select)(Window &))
+      : Widget(type, pos, size), index(index), on_select(on_select) {}
 };
 
 class CapturingWidget : public SelectableWidget
@@ -135,12 +140,12 @@ class ListItem : public SelectableWidget
 {
 public:
   const char *text;
-  WidgetType type = WidgetType::LISTITEM;
+  
 
   ListItem(const char *text)
-      : SelectableWidget(vec2(0, 0), vec2(0, 0), 0, nullptr), text(text) {}
+      : SelectableWidget(WidgetType::LISTITEM, vec2(0, 0), vec2(0, 0), 0, nullptr), text(text) {}
   ListItem(const char *text, void (*on_select)(Window &))
-      : SelectableWidget(vec2(0, 0), vec2(0, 0), 0, on_select), text(text) {}
+      : SelectableWidget(WidgetType::LISTITEM, vec2(0, 0), vec2(0, 0), 0, on_select), text(text) {}
 };
 
 // class ListBox : public CapturingWidget
@@ -194,9 +199,10 @@ public:
   const char *text = "";
   const uint8_t *font = u8g2_font_5x8_mf;
 
-  Label() {}
+  Label() 
+      : Widget(WidgetType::WIDGET) {}
   Label(vec2 pos, vec2 size, const char *text)
-      : Widget(pos, size), text(text) {}
+      : Widget(WidgetType::WIDGET, pos, size), text(text) {}
 
   void draw(Window &parent) override;
   //void update() override;
