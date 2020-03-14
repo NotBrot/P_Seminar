@@ -34,7 +34,7 @@ void mUI::ListBox::draw(Window &parent)
     list_index--;
     redraw = true;
   }
-  if (parent.button_states.bit.B)
+  if (parent.button_states.bit.B && list_index < size - 1)
   {
     list_index++;
     redraw = true;
