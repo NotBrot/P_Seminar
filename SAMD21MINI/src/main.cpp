@@ -1,4 +1,3 @@
-//#pragma message "Compiling " __FILE__ "..."
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -10,23 +9,19 @@
 
 #if defined(USE_UCGLIB)
 #include <Ucglib.h>
-// #elif defined(SCREEN_VIRTUAL)
-// #include <GlcdRemoteClient.h>
 #else
 #include <U8g2lib.h>
 #endif
 
 #include <JC_Button.h>
 
-// #include <Adafruit_Sensor.h>
-// #include <DHT.h>
 
 #pragma GCC diagnostic pop
 
 #include "mUI.h"
 
-//#define PLATFORM_SAMD21MINI
-//#define PLATFORM_M5STACK
+
+
 
 #define ESPRESET_PIN 13
 #define LED1 25 // TX
@@ -38,7 +33,6 @@
 #define DEBOUNCE_MS 10
 
 #if defined(PLATFORM_M5STACK)
-//#pragma message "Compiling " __FILE__ " for M5Stack"
 #define TFT_DC 27
 #define TFT_CS 14
 #define TFT_RST 33
@@ -46,11 +40,7 @@
 #define TFT_CLK 14
 #define TFT_BL 32
 
-// #if defined(SCREEN_ILI9342)
 Ucglib_ILI9341_18x240x320_HWSPI u8g2(/*cd=*/TFT_DC, /*cs=*/TFT_CS, /*reset=*/TFT_RST);
-// #elif defined(SCREEN_VIRTUAL)
-// GlcdRemoteClient u8g2(U8G2_R0, u8g2_Setup_ssd1309_128x64_noname2_f, COMM_SERIAL);
-// #endif
 
 #define BUTTON_A_PIN 39
 #define BUTTON_B_PIN 38
@@ -59,7 +49,6 @@ Ucglib_ILI9341_18x240x320_HWSPI u8g2(/*cd=*/TFT_DC, /*cs=*/TFT_CS, /*reset=*/TFT
 #define SerialUSB Serial
 
 #elif defined(PLATFORM_SAMD21MINI)
-//#pragma message "Compiling " __FILE__ " for SAMD21Mini"
 
 #if defined(SCREEN_ST7735)
 Ucglib_ST7735_18x128x160_HWSPI u8g2(/*cd=*/9, /*cs=*/10, /*reset=*/8);
@@ -82,8 +71,6 @@ Button BtnA = Button(BUTTON_A_PIN);
 Button BtnB = Button(BUTTON_B_PIN);
 Button BtnC = Button(BUTTON_C_PIN);
 
-// #define DHTPIN 5
-// DHT dht(DHTPIN, DHT11);
 #include <Adafruit_BMP280.h>
 Adafruit_BMP280 bmp;
 
@@ -249,8 +236,6 @@ void setup()
 
     if (l->items[1].checked)
     {
-      // mUI::MessageBox msg = mUI::MessageBox(caller, "Information", "WLAN wird angeschaltet", mUI::MessageBoxType::INFO);
-      // msg.show();
       caller.update(true);
       mUI::drawPopup("WLAN wird angeschaltet", 5, 20);
       u8g2.sendBuffer();
@@ -277,9 +262,7 @@ void setup()
     {
       Serial1.write("I"); // Request Info
       Serial1.flush();    // Wait until transfer complete
-      //delay(50);            // Give the ESP time to print AP info
       serial_buf[0] = '\0'; // Clear string
-      //while (Serial1.available() <= 0); // Wait for communication start
       for (;;)
       {
         while (Serial1.available() <= 0)
@@ -292,9 +275,7 @@ void setup()
 
       Serial1.write("O"); // Send ACK
       Serial1.flush();
-      //delay(50);
       serial_buf1[0] = '\0';
-      //while (Serial1.available() <= 0);
       for (;;)
       {
         while (Serial1.available() <= 0)
@@ -310,8 +291,6 @@ void setup()
       Serial1.write("O"); // Send ACK
       Serial1.flush();
 
-      // mUI::drawPopup(ui_buf, 5, 20);
-      // delay(500);
       mUI::MessageBox info = mUI::MessageBox(caller, "WLAN", ui_buf, mUI::MessageBoxType::INFO);
       info.show();
     }
@@ -338,9 +317,6 @@ void setup()
       nDevices = 0;
       for (address = 1; address < 127; address++)
       {
-        // The i2c_scanner uses the return value of
-        // the Write.endTransmisstion to see if
-        // a device did acknowledge to the address.
         Wire.beginTransmission(address);
         error = Wire.endTransmission();
 
@@ -402,7 +378,6 @@ void setup()
   {
 #if defined(USE_U8G2)
     u8g2.clearBuffer();
-    ///main_window.widgets[0]->pos.x++;
     main_menu.update(true);
     if (WiFi_on)
     {
@@ -435,7 +410,6 @@ void setup()
           //   break;
 
         default:
-          //mUI::drawStatus(inChar);
           mUI::drawStatus('E');
           break;
         }
