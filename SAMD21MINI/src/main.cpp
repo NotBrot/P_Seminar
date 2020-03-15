@@ -145,7 +145,7 @@ void setup()
   // MAIN MENU
 
 #pragma region user_interface_declaration
-  mUI::ListItem main_menu_listitems[5];
+  mUI::ListItem main_menu_listitems[4];
   main_menu_listitems[0] = mUI::ListItem("Messwerte", [](mUI::Window &caller) {
     // MEASURING WINDOW
 
@@ -342,7 +342,29 @@ void setup()
       while (!test_buttons())
         ;
     });
-    debug_window_listitems[2] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
+    debug_window_listitems[2] = mUI::ListItem("Test", [](mUI::Window &caller) {
+      mUI::Button but = mUI::Button({2, 14}, {(uint8_t)(u8g2.getStrWidth("ABC") + 6), (uint8_t)(u8g2.getMaxCharHeight() + 6)}, 0, "ABC");
+      mUI::Button but2 = mUI::Button({30, 40}, {(uint8_t)(u8g2.getStrWidth("Test") + 6), (uint8_t)(u8g2.getMaxCharHeight() + 6)}, 1, "Test");
+      mUI::Widget *test_window_widgets[] = {&but, &but2};
+      mUI::Window test_window("Test", test_buttons, sizeof(test_window_widgets) / sizeof(test_window_widgets[0]), test_window_widgets);
+
+      while (!close_flag)
+      {
+        u8g2.clearBuffer();
+        but.pos.x = (uint8_t)(sin((double)millis() / 500) * (WIDTH - but.size.x) / 2 + (WIDTH - but.size.x) / 2);
+        but2.pos.x = (uint8_t)(tan((double)millis() / 500) * (WIDTH - but.size.x) / 2 + (WIDTH - but.size.x) / 2);
+        test_window.update(true);
+        if (WiFi_on)
+        {
+          u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
+          mUI::drawStatus(0xf8);
+          u8g2.setFont(u8g2_font_5x8_mf);
+        }
+        u8g2.sendBuffer();
+      }
+      close_flag = false;
+    });
+    debug_window_listitems[3] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
       close_flag = true;
     });
 
@@ -364,7 +386,6 @@ void setup()
     }
     close_flag = false;
   });
-  main_menu_listitems[4] = mUI::ListItem("Test");
 
   mUI::ListBox main_menu_listbox({0, 14}, sizeof(main_menu_listitems) / sizeof(main_menu_listitems[0]), main_menu_listitems);
   mUI::Widget *main_menu_widgets[] = {&main_menu_listbox};
