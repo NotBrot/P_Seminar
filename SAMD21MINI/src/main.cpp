@@ -130,8 +130,6 @@ void setup()
 
   Serial1.write("D"); // Send ESP8266 into DeepSleep
 
-  // dht.begin();
-
   mUI::begin(&u8g2);
 
 #if defined(USE_U8G2)
