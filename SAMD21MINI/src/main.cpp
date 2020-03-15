@@ -167,6 +167,7 @@ void setup()
         {
           u8g2.clearBuffer();
           sprintf(ui_buf, "%.2f°C", bmp.readTemperature());
+          sprintf(ui_buf, "%.2f °C", bmp.readTemperature());
 
           char *sp = strchr(ui_buf, '.');
           *sp = ',';
