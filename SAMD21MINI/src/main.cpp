@@ -17,6 +17,8 @@
 
 #pragma region defines_declarations
 
+#define VERSION_STRING "v0.1"
+#define VERSION 1
 
 #define ESPRESET_PIN 13
 #define LED1 25 // TX
@@ -145,7 +147,7 @@ void setup()
   // MAIN MENU
 
 #pragma region user_interface_declaration
-  mUI::ListItem main_menu_listitems[4];
+  mUI::ListItem main_menu_listitems[5];
   main_menu_listitems[0] = mUI::ListItem("Messwerte", [](mUI::Window &caller) {
     // MEASURING WINDOW
 
@@ -385,6 +387,20 @@ void setup()
       u8g2.sendBuffer();
     }
     close_flag = false;
+  });
+  main_menu_listitems[4] = mUI::ListItem("Info", [](mUI::Window &caller) {
+    mUI::Label version_lbl({1, 12}, {0, 0}, "Version: " VERSION_STRING);
+    mUI::Label build_lbl0({1, 22}, {0, 0}, "Build Time: ");
+    mUI::Label build_lbl1({1, 32}, {0, 0}, __TIMESTAMP__);
+    mUI::Widget *info_window_widgets[] = {&version_lbl, &build_lbl0, &build_lbl1};
+    mUI::Window info_window("Info", test_buttons, sizeof(info_window_widgets) / sizeof(info_window_widgets[0]), info_window_widgets);
+
+    u8g2.clearBuffer();
+    info_window.update(true);
+    u8g2.sendBuffer();
+
+    while (!test_buttons())
+      ;
   });
 
   mUI::ListBox main_menu_listbox({0, 14}, sizeof(main_menu_listitems) / sizeof(main_menu_listitems[0]), main_menu_listitems);
