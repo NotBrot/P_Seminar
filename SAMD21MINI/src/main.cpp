@@ -194,7 +194,33 @@ void setup()
         }
       }
     });
-    measure_window_listitems[1] = mUI::ListItem("Luftdruck", nullptr);
+    measure_window_listitems[1] = mUI::ListItem("Luftdruck", [](mUI::Window &caller) {
+      if (!bmp.begin(0x76))
+      {
+        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
+        err.show();
+      }
+      else
+      {
+        mUI::Label pressure_lbl({4, 25}, {0, 0}, "");
+        pressure_lbl.font = u8g2_font_helvR14_tf;
+        mUI::Widget *pressure_window_widgets[] = {&pressure_lbl};
+        mUI::Window pressure_window("Luftdruck", test_buttons, sizeof(pressure_window_widgets) / sizeof(pressure_window_widgets[0]), pressure_window_widgets);
+
+        while (!test_buttons())
+        {
+          u8g2.clearBuffer();
+          sprintf(ui_buf, "%.2f hPa", bmp.readPressure() / 100);
+
+          char *sp = strchr(ui_buf, '.');
+          *sp = ',';
+
+          pressure_lbl.text = ui_buf;
+          pressure_window.update(true);
+          u8g2.sendBuffer();
+        }
+      }
+    });
     measure_window_listitems[2] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
       close_flag = true;
     });
