@@ -1,9 +1,3 @@
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-function"
-#pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic ignored "-Waddress"
-
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -15,8 +9,6 @@
 
 #include <JC_Button.h>
 
-
-#pragma GCC diagnostic pop
 
 #include "mUI.h"
 
