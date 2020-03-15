@@ -299,7 +299,7 @@ void setup()
   main_menu_listitems[3] = mUI::ListItem("Debug", [](mUI::Window &caller) {
     // DEBUG WINDOW
 
-    mUI::ListItem debug_window_listitems[3];
+    mUI::ListItem debug_window_listitems[4];
     debug_window_listitems[0] = mUI::ListItem("Sende \"T\" an ESP", [](mUI::Window &caller) {
       Serial1.print("T");
     });
