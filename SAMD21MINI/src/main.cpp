@@ -1,3 +1,4 @@
+#pragma region includes
 #include <Arduino.h>
 #include <SPI.h>
 
@@ -11,8 +12,10 @@
 
 
 #include "mUI.h"
+#pragma endregion includes
 
 
+#pragma region defines_declarations
 
 
 #define ESPRESET_PIN 13
@@ -76,6 +79,7 @@ char ui_buf[50];
 bool WiFi_on = false;
 int time_temp;
 
+#pragma endregion defines_declarations
 
 uint8_t test_buttons()
 {
@@ -87,7 +91,7 @@ uint8_t test_buttons()
 
 void setup()
 {
-
+#pragma region init_code
 #if defined(PLATFORM_M5STACK)
   Serial.begin(9600);
   pinMode(BUTTON_A_PIN, INPUT);
@@ -137,8 +141,10 @@ void setup()
   u8g2.enableUTF8Print();
   u8g2.clearBuffer();
 #endif
+#pragma endregion init
   // MAIN MENU
 
+#pragma region user_interface_declaration
   mUI::ListItem main_menu_listitems[5];
   main_menu_listitems[0] = mUI::ListItem("Messwerte", [](mUI::Window &caller) {
     // MEASURING WINDOW
@@ -363,7 +369,9 @@ void setup()
   mUI::ListBox main_menu_listbox({0, 14}, sizeof(main_menu_listitems) / sizeof(main_menu_listitems[0]), main_menu_listitems);
   mUI::Widget *main_menu_widgets[] = {&main_menu_listbox};
   mUI::Window main_menu("Hauptmenü", test_buttons, sizeof(main_menu_widgets) / sizeof(main_menu_widgets[0]), main_menu_widgets);
+#pragma endregion user_interface_declaration
 
+#pragma region main_loop
   for (;;)
   {
 #if defined(USE_U8G2)
@@ -413,6 +421,7 @@ void setup()
       delay(10);
     }
   }
+#pragma endregion main_loop
 }
 
 void loop()
