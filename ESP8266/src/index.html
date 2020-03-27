@@ -1,51 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
   <head>
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <title>Web-Server-Test</title>
   </head>
-  <body id="body">
-    <h1>Web-Server-Test</h1>
-    <h2>DHT11</h2>
-    <span id="error-message" style="font-size: 10px;">
-      <p>Temperatur: <span id="temperature"></span>&deg;C</p>
-      <p>Luftfeuchtigkeit: <span id="humidity"></span>%</p>
-      <button onclick="update()">Update</button>
-    </span>
+  <body>
+    <header>
+      <h1>Web-Server-Test</h1>
+    </header>
+
+    <section class="container">
+      <div class="box">
+        <h2>DHT11</h2>
+        <!-- <span id="error-message"> -->
+        <div class="values">
+          <div class="value-box">
+            <p>Temperatur: <span id="temperature"></span>&deg;C</p>
+          </div>
+
+          <div class="value-box">
+            <p>Luftfeuchtigkeit: <span id="humidity"></span>%</p>
+          </div>
+
+          <div class="transfer-indicator"></div>
+        </div>
+
+        <button onclick="update()">Update</button>
+        <!-- </span> -->
+      </div>
+    </section>
+
+    <div id="messagebox">
+      <p id="message">MessageBox</p>
+      <button onclick="document.getElementById('messagebox').hidden = true">
+        OK
+      </button>
+    </div>
+
+    <div style="margin-top: 1000px;"></div>
   </body>
-  <script>
-    function updateTemp() {
-      const request = new XMLHttpRequest();
-      request.open("GET", "/temp");
-      request.send();
-      console.log("Test");
-      request.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("temperature").innerHTML = this.responseText;
-        } else if (this.readyState == 4 && this.status != 200) {
-          document.getElementById("error-message").innerHTML =
-            "<h1>Error getting values</h1>";
-        }
-      };
-    }
-    function updateHum() {
-      const request = new XMLHttpRequest();
-      request.open("GET", "/hum");
-      request.send();
-      console.log("Test");
-      request.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("humidity").innerHTML = this.responseText;
-        } else if (this.readyState == 4 && this.status != 200) {
-          document.getElementById("error-message").innerHTML =
-            "<h1>Error getting values</h1>";
-        }
-      };
-    }
-    function update() {
-      updateTemp();
-      updateHum();
-    }
-    setInterval(update, 2000);
-    update();
-  </script>
+  <script src="data_fetcher.js"></script>
 </html>
