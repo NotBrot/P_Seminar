@@ -80,7 +80,7 @@ public:
 
 class Window
 {
-//private:
+  //private:
 public:
   const char *title = "";
   uint8_t num_of_widgets = 0;
@@ -100,7 +100,8 @@ public:
   bool redraw_all = true;
   bool redraw_frame = true;
 
-//public:
+  //public:
+  Window() {}
   Window(const char *title, uint8_t (*test_buttons)(), uint8_t num_of_widgets, Widget *widgets[]);
   void update(bool force = false);
 };
@@ -203,7 +204,7 @@ public:
   const char *text = "";
   const uint8_t *font = u8g2_font_5x8_mf;
 
-  Label() 
+  Label()
       : Widget(WidgetType::WIDGET) {}
   Label(vec2 pos, vec2 size, const char *text)
       : Widget(WidgetType::WIDGET, pos, size), text(text) {}
@@ -309,6 +310,9 @@ static U8G2 *screen;
 static Ucglib *screen;
 #endif
 
+static uint16_t status_symbols[3] = {0x0, 0x0, 0x0};
+void setStatus(uint8_t index, uint16_t value);
+
 #pragma GCC diagnostic pop
 
 // static uint8_t previous_button_index = 1;
@@ -329,7 +333,7 @@ void begin(Ucglib *display);
 void begin();
 void clearScreen();
 void drawMenuFrame(const char *title);
-void drawStatus(const char status);
+void drawStatus(uint16_t status[3]);
 void drawButton(const uint16_t pos_x, uint16_t pos_y, uint16_t w, uint16_t h, const char *text, bool selected);
 void drawText(const uint16_t pos_x, uint16_t pos_y, const char *text);
 void drawListBox(const uint16_t pos_x, const uint16_t pos_y, const ListItem list_items[], const size_t size, const size_t current_index);

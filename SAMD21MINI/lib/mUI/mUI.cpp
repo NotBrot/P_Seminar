@@ -136,6 +136,8 @@ void mUI::Window::update(bool force /*=false*/)
     else
       widgets[i]->draw(*this);
   }
+  mUI::drawStatus(mUI::status_symbols);
+  screen->sendBuffer();
 }
 
 void mUI::MessageBox::show()
@@ -158,6 +160,12 @@ void mUI::MessageBox::show()
 
   parent.update(true);
 }
+
+void mUI::setStatus(uint8_t index, uint16_t value)
+{
+  status_symbols[index] = value;
+}
+
 
 #if defined(USE_U8G2) || defined(SCREEN_VIRTUAL)
 #if defined(USE_U8G2)
@@ -189,9 +197,12 @@ void mUI::drawMenuFrame(const char *title)
   // screen->drawLine(0, 20, WIDTH - 1, 20);
 }
 
-void mUI::drawStatus(const char status)
+void mUI::drawStatus(uint16_t status[3])
 {
-  screen->drawGlyph(WIDTH - 9, 1, status);
+  screen->setFont(u8g2_font_open_iconic_all_1x_t);
+  for (int i = 0; i < 3; i++)
+    screen->drawGlyph(WIDTH - 9 - (i * 10), 1, status[i]);
+  screen->setFont(u8g2_font_5x8_mf);
 }
 
 void mUI::drawButton(const uint16_t pos_x, uint16_t pos_y, uint16_t w, uint16_t h, const char *text, bool selected)
