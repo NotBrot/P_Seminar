@@ -370,7 +370,12 @@ void setup()
       }
       close_flag = false;
     });
-    debug_window_listitems[3] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
+    debug_window_listitems[3] = mUI::ListItem("(*(uint8_t *)0) = 0", [](mUI::Window &caller) {
+      uint8_t *ptr = 0;
+      *ptr = 0;
+      (*(uint8_t *)0) = 0;
+    });
+    debug_window_listitems[4] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
       close_flag = true;
     });
 
