@@ -472,3 +472,11 @@ void setup()
 void loop()
 {
 }
+
+void HardFault_Handler(void)
+{
+  mUI::drawPopup("HardFault!!!", 5, 20);
+  u8g2.sendBuffer();
+  while(digitalRead(2) && digitalRead(3) && digitalRead(4));
+  NVIC_SystemReset();
+}
