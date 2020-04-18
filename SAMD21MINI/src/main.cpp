@@ -81,6 +81,8 @@ char ui_buf[50];
 bool WiFi_on = false;
 int time_temp;
 
+mUI::Window main_window;
+
 #pragma endregion defines_declarations
 
 uint8_t test_buttons()
@@ -220,9 +222,9 @@ void setup()
       measure_window.update(true);
       if (WiFi_on)
       {
-        u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
-        mUI::drawStatus(0xf8);
-        u8g2.setFont(u8g2_font_5x8_mf);
+        //u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
+        //mUI::drawStatus(0xf8);
+        //u8g2.setFont(u8g2_font_5x8_mf);
       }
       u8g2.sendBuffer();
     }
@@ -244,6 +246,7 @@ void setup()
       while (Serial1.read() != 'O')
         ; // Wait for ACK from ESP8266
       WiFi_on = true;
+      mUI::setStatus(0, 0xf8);
       delay(700);
     }
     else
@@ -252,14 +255,15 @@ void setup()
       Serial1.write("D");
       delay(100);
       WiFi_on = false;
+      mUI::setStatus(0, 0x0);
     }
   });
   main_menu_listitems[1].is_checkbox = true;
   main_menu_listitems[2] = mUI::ListItem("WLAN-Info", [](mUI::Window &caller) {
     if (WiFi_on)
     {
-      Serial1.write("I"); // Request Info
-      Serial1.flush();    // Wait until transfer complete
+      Serial1.write("I");   // Request Info
+      Serial1.flush();      // Wait until transfer complete
       serial_buf[0] = '\0'; // Clear string
       for (;;)
       {
@@ -358,9 +362,9 @@ void setup()
         test_window.update(true);
         if (WiFi_on)
         {
-          u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
-          mUI::drawStatus(0xf8);
-          u8g2.setFont(u8g2_font_5x8_mf);
+          //u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
+          //mUI::drawStatus(0xf8);
+          //u8g2.setFont(u8g2_font_5x8_mf);
         }
         u8g2.sendBuffer();
       }
@@ -380,9 +384,9 @@ void setup()
       debug_window.update(true);
       if (WiFi_on)
       {
-        u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
-        mUI::drawStatus(0xf8);
-        u8g2.setFont(u8g2_font_5x8_mf);
+        //u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
+        //mUI::drawStatus(0xf8);
+        //u8g2.setFont(u8g2_font_5x8_mf);
       }
       u8g2.sendBuffer();
     }
@@ -416,9 +420,9 @@ void setup()
     main_menu.update(true);
     if (WiFi_on)
     {
-      u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
-      mUI::drawStatus(0xf8);
-      u8g2.setFont(u8g2_font_5x8_mf);
+      //u8g2.setFont(u8g2_font_open_iconic_all_1x_t);
+      //mUI::drawStatus(0xf8);
+      //u8g2.setFont(u8g2_font_5x8_mf);
     }
     u8g2.sendBuffer();
 #else
@@ -426,6 +430,9 @@ void setup()
 #endif
     while (Serial1.available())
     {
+      mUI::setStatus(1, 0x10e);
+      main_menu.update(true);
+      u8g2.sendBuffer();
       inChar = (char)Serial1.read();
       switch (inChar)
       {
@@ -457,6 +464,7 @@ void setup()
       u8g2.sendBuffer();
       delay(10);
     }
+    mUI::setStatus(1, 0x0);
   }
 #pragma endregion main_loop
 }
