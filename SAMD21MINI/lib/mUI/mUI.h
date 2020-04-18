@@ -5,13 +5,7 @@
 #ifndef _MUI_H_
 #define _MUI_H_
 
-#if defined(USE_U8G2)
 #include <U8g2lib.h>
-// #elif defined(SCREEN_VIRTUAL)
-// #include <GlcdRemoteClient.h>
-#else
-#include <Ucglib.h>
-#endif
 
 //#include <vector>
 
@@ -19,22 +13,6 @@
 
 #define WIDTH 128
 #define HEIGHT 64
-
-#ifdef PLATFORM_M5STACK
-// #define BLACK 0, 0, 0
-// #define WHITE 255, 255, 255
-// #define GREEN 0, 255, 0
-// #define DARKGRAY 25, 25, 25
-#define BLACK 255, 255, 255
-#define WHITE 0, 0, 0
-#define GREEN 255, 0, 255
-#define DARKGRAY 230, 230, 230
-#else
-#define BLACK 0, 0, 0
-#define WHITE 255, 255, 255
-#define GREEN 0, 255, 0
-#define DARKGRAY 25, 25, 25
-#endif
 
 namespace mUI
 {
@@ -302,13 +280,7 @@ typedef void (*OnSelectHandler)(Window &);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
-#ifdef USE_U8G2
 static U8G2 *screen;
-// #elif defined(SCREEN_VIRTUAL)
-// static GlcdRemoteClient *screen;
-#else
-static Ucglib *screen;
-#endif
 
 static uint16_t status_symbols[3] = {0x0, 0x0, 0x0};
 void setStatus(uint8_t index, uint16_t value);
@@ -318,17 +290,10 @@ void setStatus(uint8_t index, uint16_t value);
 // static uint8_t previous_button_index = 1;
 // static uint8_t current_button_index = 0;
 
-// inline Ucglib *screen;
 // inline uint8_t previous_button_index = 1;
 // inline uint8_t current_button_index = 0;
 
-#ifdef USE_U8G2
 void begin(U8G2 *display);
-// #elif defined(SCREEN_VIRTUAL)
-// void begin(GlcdRemoteClient *display);
-#else
-void begin(Ucglib *display);
-#endif
 
 void begin();
 void clearScreen();
