@@ -146,7 +146,7 @@ void mUI::MessageBox::show()
   parent.update(true);
   drawPopup(message, 5, 20);
   screen->sendBuffer();
-  delay(500);
+  delay(1000);
 
   screen->setDrawColor(0);
   screen->drawBox(5, 20, 120, 28);

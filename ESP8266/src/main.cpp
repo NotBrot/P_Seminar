@@ -1,20 +1,25 @@
 #include <Arduino.h>
 
-#if defined(PLATFORM_M5STACK)
-#include <M5Stack.h>
-#endif
-
-#if defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
-#elif defined(ESP32)
-#include <WiFi.h>
-#include <WebServer.h>
-#include <ESPmDNS.h>
-#endif
+
+#include <SDFS.h>
 
 #include <DNSServer.h>
+
+#include <U8g2lib.h>
+
+#include "SerialTransfer.hpp"
+
+U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0);
+
+U8G2LOG u8g2log;
+
+#define WIDTH 12
+#define HEIGHT 7
+
+uint8_t u8g2log_buf[WIDTH * HEIGHT];
 
 #define RESET_VECTOR() ((void(const *)(void))0)()
 
@@ -74,17 +79,13 @@ const char *INDEX PROGMEM = R"""(<!DOCTYPE html>
 char inChar;
 char serial_buf[50];
 
-#if defined(ESP8266)
 ESP8266WebServer server(80);
-#elif defined(ESP32)
-WebServer server(80);
-#endif
 
 const IPAddress ip(192, 168, 4, 1);
 const IPAddress gateway(192, 168, 4, 1);
 const IPAddress subnet(255, 255, 255, 0);
 
-const char *ssid PROGMEM = "ESP8266-AP";
+const char *ssid PROGMEM = "ESP-AP";
 const char *password PROGMEM = "123456789";
 const char *hostname PROGMEM = "esp";
 
@@ -92,29 +93,44 @@ const uint8_t DNS_PORT = 53;
 
 DNSServer dns;
 
+SerialTransfer::SerialHandler handler_list[] = {
+    SerialTransfer::SerialHandler(SerialTransfer::SerialData('D', false), []() {
+      //esp_deep_sleep_start();
+      u8g2.setPowerSave(1);
+      ESP.deepSleep(0);
+    }),
+    SerialTransfer::SerialHandler(SerialTransfer::SerialData('I', true), []() {
+      Serial.write(ssid);
+      Serial.write('\n'); // Send NL as indicator for end of string
+      Serial.flush();
+      while (Serial.read() != 'O')
+        ;
+      Serial.write(password);
+      Serial.write('\n');
+      Serial.flush();
+      while (Serial.read() != 'O')
+        ;
+      // Serial2.write(WiFi.softAPIP().toString().c_str());
+      // while (Serial2.read() != 'O');
+    })
+};
+
 void handleRoot()
 {
-#if defined(PLATFORM_M5STACK)
-  M5.Lcd.print(" / ");
-#endif
+  u8g2log.print(" / ");
   server.send_P(200, "text/html", INDEX);
 }
 
 void setup()
 {
-#if defined(PLATFORM_M5STACK)
-  M5.begin();
-  Serial2.begin(9600);
-  Serial2.setTimeout(50);
-  Serial2.flush();
+  Serial.begin(9600);
+  Serial.setTimeout(50);
 
-  M5.Lcd.clearDisplay(0x000000);
-  M5.Lcd.setTextSize(2);
-  M5.Lcd.println(F("WebServer-Test"));
-
-  M5.Lcd.setTextSize(1);
-  M5.Lcd.printf("\nAP: \"%s\", Pass: \"%s\"\n", ssid, password);
-#endif
+  u8g2.begin();
+  u8g2.setFont(u8g2_font_5x7_mf);
+  u8g2log.begin(u8g2, WIDTH, HEIGHT, u8g2log_buf);
+  u8g2log.setLineHeightOffset(0);
+  u8g2log.setRedrawMode(1);
 
   //WiFi.softAPConfig(ip, gateway, subnet);
   WiFi.softAP(ssid, password);
@@ -125,16 +141,12 @@ void setup()
     ESP.restart();
 
   delay(10);
-#if defined(PLATFORM_M5STACK)
-  M5.Lcd.printf("IP address: %s\n", WiFi.softAPIP().toString().c_str());
-#endif
+
+  u8g2log.printf("AP:\n\"%s\"\npass:\n\"%s\"\nIP addr:\n%s\n", ssid, password, WiFi.softAPIP().toString().c_str());
 
   server.on("/", HTTP_GET, handleRoot);
   server.on("/temp", HTTP_GET, []() {
-#if defined(PLATFORM_M5STACK)
-    M5.Lcd.print(" /t ");
-    Serial2.write("RT");
-#endif
+    u8g2log.print(" /t ");
     delay(100);           // Give the SAMD21MINI time to print info
     serial_buf[0] = '\0'; // Clear string
     while (Serial.available() > 0)
@@ -147,10 +159,7 @@ void setup()
     server.send_P(200, "text/plain", serial_buf);
   });
   server.on("/hum", HTTP_GET, []() {
-#if defined(PLATFORM_M5STACK)
-    M5.Lcd.print(" /h ");
-    Serial2.write("RH");
-#endif
+    u8g2log.print(" /h ");
     delay(100);           // Give the SAMD21MINI time to print info
     serial_buf[0] = '\0'; // Clear string
     while (Serial.available() > 0)
@@ -166,61 +175,54 @@ void setup()
 
   MDNS.addService("http", "tcp", 80);
 
-#if defined(PLATFORM_M5STACK)
-  Serial2.write("O");
-  Serial2.flush();
-#endif
+  Serial.write("O");
 }
 
 void loop()
 {
   dns.processNextRequest();
   server.handleClient();
+  SerialTransfer::handle(Serial, handler_list, sizeof(handler_list) / sizeof(handler_list[0]), [](char cmd) {
+    u8g2log.write(cmd);
+  });
 
-#if defined(PLATFORM_M5STACK)
-  M5.update();
+  //   while (Serial.available() > 0)
+  //   {
+  //     inChar = Serial.read();
+  //     u8g2log.write(inChar);
 
-  while (Serial2.available() > 0)
-#else
-  while (Serial.available() > 0)
-#endif
-  {
-    inChar = Serial.read();
-    if (inChar <= 0)
-      continue;
+  //     if (inChar <= 0)
+  //       continue;
 
-#if defined(PLATFORM_M5STACK)
-    M5.Lcd.print(inChar);
-    if (inChar == '\r')
-      M5.Lcd.print('\n');
-#endif
+  //     if (inChar == 'D')
+  //     {
+  //       //esp_deep_sleep_start();
+  //       u8g2.setPowerSave(1);
+  //       ESP.deepSleep(0);
+  //     }
+  //     else if (inChar == 'I')
+  //     {
+  //       Serial.write(ssid);
+  //       Serial.write('\n'); // Send NL as indicator for end of string
+  //       Serial.flush();
+  //       while (Serial.read() != 'O')
+  //         ;
+  //       Serial.write(password);
+  //       Serial.write('\n');
+  //       Serial.flush();
+  //       while (Serial.read() != 'O')
+  //         ;
+  //       // Serial2.write(WiFi.softAPIP().toString().c_str());
+  //       // while (Serial2.read() != 'O');
+  //     }
+  //   }
 
-    if (inChar == 'D')
-      //esp_deep_sleep_start();
-      ESP.deepSleep(0);
-    else if (inChar == 'I')
-    {
-      Serial.write(ssid);
-      Serial.write('\n'); // Send NL as indicator for end of string
-      Serial.flush();
-      while (Serial.read() != 'O')
-        ;
-      Serial.write(password);
-      Serial.write('\n');
-      Serial.flush();
-      while (Serial.read() != 'O')
-        ;
-      // Serial2.write(WiFi.softAPIP().toString().c_str());
-      // while (Serial2.read() != 'O');
-    }
-  }
-
-#if defined(PLATFORM_M5STACK)
-  if (M5.BtnA.wasReleased())
-  {
-    Serial2.write("T");
-    M5.Lcd.println("Test");
-    Serial2.flush();
-  }
-#endif
+  // #if defined(PLATFORM_M5STACK)
+  //   if (M5.BtnA.wasReleased())
+  //   {
+  //     Serial2.write("T");
+  //     M5.Lcd.println("Test");
+  //     Serial2.flush();
+  //   }
+  // #endif
 }

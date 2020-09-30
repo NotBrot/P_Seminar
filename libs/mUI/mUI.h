@@ -30,7 +30,9 @@ enum WidgetType
 {
   WIDGET,
   SELECTABLEWIDGET,
-  LISTITEM
+  LISTITEM,
+  MENUENTRY,
+  SUBMENUENTRY
 };
 
 struct vec2
@@ -125,6 +127,11 @@ public:
 
   ListItem() {}
 
+  ListItem(WidgetType type, const char *text)
+      : SelectableWidget(type, vec2(0, 0), vec2(0, 0), 0, nullptr), text(text) {}
+  ListItem(WidgetType type, const char *text, void (*on_select)(Window &))
+      : SelectableWidget(type, vec2(0, 0), vec2(0, 0), 0, on_select), text(text) {}
+
   ListItem(const char *text)
       : SelectableWidget(WidgetType::LISTITEM, vec2(0, 0), vec2(0, 0), 0, nullptr), text(text) {}
   ListItem(const char *text, void (*on_select)(Window &))
@@ -159,6 +166,27 @@ public:
       : SelectableWidget(pos, vec2(0, 0), 0, nullptr), size(size), items(items) {}
 
   void draw(Window &parent) override;
+};
+
+class MenuEntry : public ListItem
+{
+  
+  MenuEntry() {}
+
+  MenuEntry(const char *text)
+      : ListItem(WidgetType::MENUENTRY, text) {}
+  MenuEntry(const char *text, void (*on_select)(Window &))
+      : ListItem(WidgetType::MENUENTRY, text, on_select) {}
+};
+
+class SubMenuEntry : public MenuEntry
+{
+
+};
+
+class MenuWindow : public Window
+{
+  MenuWindow(const char *title, uint8_t (*test_buttons)(), uint8_t num_of_entries, MenuEntry *menu_entries[]);
 };
 
 class Button : public SelectableWidget

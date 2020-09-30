@@ -1,14 +1,24 @@
 #pragma region includes
 #include <Arduino.h>
+
+// C++ STL has conflicting names
+#undef min
+#undef max
+
+#include <iostream>
+#include <algorithm>
+#include <array>
+
 #include <SPI.h>
+#include <SD.h>
 
 #include <U8g2lib.h>
 #include <JC_Button.h>
 
-
 #include "mUI.h"
-#pragma endregion includes
+#include "SerialTransfer.hpp"
 
+#pragma endregion includes
 
 #pragma region defines_declarations
 
@@ -96,8 +106,132 @@ void setup()
   main_menu_listitems[0] = mUI::ListItem("Messwerte", [](mUI::Window &caller) {
     // MEASURING WINDOW
 
-    mUI::ListItem measure_window_listitems[3];
-    measure_window_listitems[0] = mUI::ListItem("Temperatur", [](mUI::Window &caller) {
+    mUI::ListItem measure_window_listitems[5];
+
+    measure_window_listitems[0] = mUI::ListItem("Plot", [](mUI::Window &caller) {
+      if (!bmp.begin(0x76))
+      {
+        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
+        err.show();
+      }
+      else
+      {
+        mUI::Label plot_lbl({4, 14}, {0, 0}, "");
+        plot_lbl.font = u8g2_font_helvR08_tf;
+        mUI::Widget *plot_window_widgets[] = {&plot_lbl};
+        mUI::Window plot_window("sin(m...)*m...", test_buttons, sizeof(plot_window_widgets) / sizeof(plot_window_widgets[0]), plot_window_widgets);
+
+        float plot = bmp.readPressure();
+        // int previous_y = map(bmp.readplot(), 98100, 98300, HEIGHT - 4, 14);
+        // int y = previous_y;
+
+#define N_YS WIDTH - 40
+
+        // int values[N_YS];
+        std::array<double, N_YS> values;
+        int i = 0;
+        // int y;
+        bool filled = false;
+
+        std::pair<std::array<double, N_YS>::iterator, std::array<double, N_YS>::iterator> minmax;
+        // std::pair<int, int> minmax;
+
+        // Clear array
+        for (double &value : values)
+        {
+          value = 0;
+        }
+
+        while (!test_buttons())
+        {
+          plot = bmp.readPressure();
+
+          u8g2.clearBuffer();
+
+          sprintf(ui_buf, "%.2f hPa", plot / 100);
+
+          *strchr(ui_buf, '.') = ',';
+
+          // Calculate min + max
+          minmax = std::minmax_element(values.begin(), values.end());
+
+          // Draw min / max
+          char buf[10];
+          itoa(*minmax.second, buf, sizeof(buf));
+          u8g2.drawStr(4, 14, buf);
+          itoa(*minmax.first, buf, sizeof(buf));
+          u8g2.drawStr(4, HEIGHT - 12, buf);
+
+          values[i] = sin((double)millis() / 120.0) * millis() / 700;
+          // values[i] = map(bmp.readplot(), 98100, 98300, HEIGHT - 4, 14);
+
+          // Draw 0 line
+          u8g2.drawLine(20, map(0, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), WIDTH - 20, map(0, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+
+          if (!filled)
+          {
+            //  0 1 2 3 4
+            // +-+-+-+-+-+
+            // |1|2|3|4|6|
+            // +-+-+-+-+-+
+            //          i
+            for (int index = 1; index <= i; index++)
+            {
+              u8g2.drawLine(index + 19, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+            }
+          }
+          else
+          {
+            //  0 1 2    3 4 5         3    4 5 0 1 2
+            // +-+-+--+ +-+-+-+       +-+  +-+-+-+-+--+
+            // |8|9|10| |5|6|7|  ==>  |5|  |6|7|8|9|10|
+            // +-+-+--+ +-+-+-+       +-+  +-+-+-+-+--+
+            //      i                               i
+
+            //  4 5
+            // +-+-+
+            // |6|7|
+            // +-+-+
+            for (int index = i + 2; index <= N_YS; index++)
+            {
+              u8g2.drawLine(index + 19 - i, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20 - i, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+            }
+
+            //  0
+            // +-+
+            // |8|
+            // +-+
+            std::max(*minmax.first, *minmax.second);
+            if (i < N_YS - 1)
+              u8g2.drawLine(19 + N_YS - i, map(values[N_YS - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), 20 + N_YS - i, map(values[0] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+
+            //  1 2
+            // +-+--+
+            // |9|10|
+            // +-+--+
+            //    i
+            for (int index = 1; index <= i; index++)
+            {
+              u8g2.drawLine(index + 19 + N_YS - i, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20 + N_YS - i, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+            }
+          }
+
+          // plot_lbl.text = ui_buf;
+          plot_window.update(true);
+          u8g2.sendBuffer();
+
+          i++;
+
+          if (i > N_YS)
+          {
+            filled = true;
+            i = 0;
+          }
+        }
+      }
+    });
+
+    measure_window_listitems[1] = mUI::ListItem("Temperatur", [](mUI::Window &caller) {
       if (!bmp.begin(0x76))
       {
         mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
@@ -124,7 +258,7 @@ void setup()
         }
       }
     });
-    measure_window_listitems[1] = mUI::ListItem("Luftdruck", [](mUI::Window &caller) {
+    measure_window_listitems[2] = mUI::ListItem("Luftdruck", [](mUI::Window &caller) {
       if (!bmp.begin(0x76))
       {
         mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
@@ -151,7 +285,53 @@ void setup()
         }
       }
     });
-    measure_window_listitems[2] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
+    measure_window_listitems[3] = mUI::ListItem("Datenlogger", [](mUI::Window &caller) {
+      if (!SD.begin(/*cs=*/5))
+      {
+        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "SD-Karte konnte nicht\ngelesen werden!", mUI::MessageBoxType::INFO);
+        err.show();
+      }
+      else if (!bmp.begin(0x76))
+      {
+        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
+        err.show();
+      }
+      else
+      {
+        File datalogger_file = SD.open("logger.csv", FILE_WRITE);
+
+        if (!datalogger_file)
+        {
+          mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "\"logger.csv\" konnte\nnicht erstellt werden!", mUI::MessageBoxType::INFO);
+          err.show();
+        }
+        else
+        {
+          datalogger_file.println("Test!");
+          datalogger_file.close();
+
+          SD.end();
+
+          mUI::Label datalogger_lbl({4, 25}, {0, 0}, "");
+          datalogger_lbl.font = u8g2_font_helvR14_tf;
+          mUI::Widget *datalogger_window_widgets[] = {&datalogger_lbl};
+          mUI::Window datalogger_window("Datenlogger", test_buttons, sizeof(datalogger_window_widgets) / sizeof(datalogger_window_widgets[0]), datalogger_window_widgets);
+
+          while (!test_buttons())
+          {
+            u8g2.clearBuffer();
+            sprintf(ui_buf, "%.2f hPa", bmp.readPressure() / 100);
+
+            *strchr(ui_buf, '.') = ',';
+
+            datalogger_lbl.text = ui_buf;
+            datalogger_window.update(true);
+            u8g2.sendBuffer();
+          }
+        }
+      }
+    });
+    measure_window_listitems[4] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
       close_flag = true;
     });
 
@@ -250,7 +430,9 @@ void setup()
 
     mUI::ListItem debug_window_listitems[5];
     debug_window_listitems[0] = mUI::ListItem("Sende \"T\" an ESP", [](mUI::Window &caller) {
-      Serial1.print("T");
+      // Serial1.print("T");
+      SerialTransfer::SerialData test_data('T');
+      SerialTransfer::write(Serial1, test_data);
     });
     debug_window_listitems[1] = mUI::ListItem("I²C-Scanner", [](mUI::Window &caller) {
       byte error, address;
@@ -314,8 +496,6 @@ void setup()
       close_flag = false;
     });
     debug_window_listitems[3] = mUI::ListItem("(*(uint8_t *)0) = 0", [](mUI::Window &caller) {
-      uint8_t *ptr = 0;
-      *ptr = 0;
       (*(uint8_t *)0) = 0;
     });
     debug_window_listitems[4] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
@@ -372,7 +552,7 @@ void setup()
       //u8g2.setFont(u8g2_font_5x8_mf);
     }
     u8g2.sendBuffer();
-    
+
     while (Serial1.available())
     {
       mUI::setStatus(1, 0x10e);
@@ -386,28 +566,37 @@ void setup()
         inChar = (char)Serial1.read();
         switch (inChar)
         {
-          // case 'T': // Request Temperature
-          //   sprintf(serial_buf, "%.2f", dht.readTemperature());
-          //   Serial1.write(serial_buf);
-          //   break;
+        case 'T': // Request Temperature
+          if (!bmp.begin())
+            break;
 
-          // case 'H': // Request Humidity
-          //   sprintf(serial_buf, "%.2f", dht.readHumidity());
-          //   Serial1.write(serial_buf);
-          //   break;
+          sprintf(serial_buf, "%.2f", bmp.readTemperature());
+          Serial1.write(serial_buf);
+          break;
+
+        case 'H': // Request Temperature
+          if (!bmp.begin())
+            break;
+          sprintf(serial_buf, "%.2f", bmp.readTemperature());
+          Serial1.write(serial_buf);
+          break;
 
         default:
-          mUI::drawStatus('E');
+          sprintf(ui_buf, "Unbekannter Request:\n\"%c\"", inChar);
+          mUI::drawPopup(ui_buf, 5, 20);
+          u8g2.sendBuffer();
+          delay(1000);
           break;
         }
         break;
 
       default:
-        mUI::drawStatus(inChar);
+        sprintf(ui_buf, "Unbekannter Befehl:\n\"%c\"", inChar);
+        mUI::drawPopup(ui_buf, 5, 20);
+        u8g2.sendBuffer();
+        delay(1000);
         break;
       }
-      u8g2.sendBuffer();
-      delay(10);
     }
     mUI::setStatus(1, 0x0);
   }
@@ -420,8 +609,22 @@ void loop()
 
 void HardFault_Handler(void)
 {
-  mUI::drawPopup("HardFault!!!", 5, 20);
+  char buf[30];
+
+  // xPSR_Type xPSR {__get_xPSR()};
+  register uint32_t pc;
+
+  __asm__ volatile("MOV %0, PC\n"
+                 : "=r"(pc));
+
+  sprintf(buf, "HardFault!!!\nPC: 0x%08lx", pc);
+  mUI::drawPopup(buf, 5, 20);
   u8g2.sendBuffer();
-  while(digitalRead(2) && digitalRead(3) && digitalRead(4));
+
+  while (digitalRead(2) && digitalRead(3) && digitalRead(4))
+    ;
+
+  mUI::drawPopup("System Reset", 5, 20);
+  u8g2.sendBuffer();
   NVIC_SystemReset();
 }
