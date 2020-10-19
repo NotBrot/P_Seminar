@@ -44,8 +44,12 @@ Button BtnA = Button(BUTTON_A_PIN);
 Button BtnB = Button(BUTTON_B_PIN);
 Button BtnC = Button(BUTTON_C_PIN);
 
-#include <Adafruit_BMP280.h>
-Adafruit_BMP280 bmp;
+#include <Adafruit_BME280.h>
+Adafruit_BME280 bmp;
+
+#include <DS18B20.h>
+OneWire onewire(6);
+DS18B20 ds(&onewire);
 
 bool close_flag = false;
 
@@ -163,7 +167,7 @@ void setup()
           u8g2.drawStr(4, HEIGHT - 12, buf);
 
           values[i] = sin((double)millis() / 120.0) * millis() / 700;
-          // values[i] = map(bmp.readplot(), 98100, 98300, HEIGHT - 4, 14);
+          // values[i] = map(bmp.readHumidity(), 98100, 98300, HEIGHT - 4, 14);
 
           // Draw 0 line
           u8g2.drawLine(20, map(0, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), WIDTH - 20, map(0, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
@@ -234,7 +238,7 @@ void setup()
     measure_window_listitems[1] = mUI::ListItem("Temperatur", [](mUI::Window &caller) {
       if (!bmp.begin(0x76))
       {
-        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
+        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BME280 nicht gefunden!", mUI::MessageBoxType::INFO);
         err.show();
       }
       else
@@ -261,7 +265,7 @@ void setup()
     measure_window_listitems[2] = mUI::ListItem("Luftdruck", [](mUI::Window &caller) {
       if (!bmp.begin(0x76))
       {
-        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
+        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BME280 nicht gefunden!", mUI::MessageBoxType::INFO);
         err.show();
       }
       else
@@ -285,52 +289,81 @@ void setup()
         }
       }
     });
-    measure_window_listitems[3] = mUI::ListItem("Datenlogger", [](mUI::Window &caller) {
-      if (!SD.begin(/*cs=*/5))
+    measure_window_listitems[3] = mUI::ListItem("Temperatur 2", [](mUI::Window &caller) {
+      if (!ds.begin())
       {
-        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "SD-Karte konnte nicht\ngelesen werden!", mUI::MessageBoxType::INFO);
-        err.show();
-      }
-      else if (!bmp.begin(0x76))
-      {
-        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
+        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "DS18B20 nicht gefunden!", mUI::MessageBoxType::INFO);
         err.show();
       }
       else
       {
-        File datalogger_file = SD.open("logger.csv", FILE_WRITE);
+        mUI::Label pressure_lbl({4, 25}, {0, 0}, "");
+        pressure_lbl.font = u8g2_font_helvR14_tf;
+        mUI::Widget *pressure_window_widgets[] = {&pressure_lbl};
+        mUI::Window pressure_window("Temperatur 2", test_buttons, sizeof(pressure_window_widgets) / sizeof(pressure_window_widgets[0]), pressure_window_widgets);
 
-        if (!datalogger_file)
+        while (!test_buttons())
         {
-          mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "\"logger.csv\" konnte\nnicht erstellt werden!", mUI::MessageBoxType::INFO);
-          err.show();
-        }
-        else
-        {
-          datalogger_file.println("Test!");
-          datalogger_file.close();
+          u8g2.clearBuffer();
 
-          SD.end();
+          ds.requestTemperatures();
+          sprintf(ui_buf, "%.2f °C", ds.getTempC());
 
-          mUI::Label datalogger_lbl({4, 25}, {0, 0}, "");
-          datalogger_lbl.font = u8g2_font_helvR14_tf;
-          mUI::Widget *datalogger_window_widgets[] = {&datalogger_lbl};
-          mUI::Window datalogger_window("Datenlogger", test_buttons, sizeof(datalogger_window_widgets) / sizeof(datalogger_window_widgets[0]), datalogger_window_widgets);
+          char *sp = strchr(ui_buf, '.');
+          *sp = ',';
 
-          while (!test_buttons())
-          {
-            u8g2.clearBuffer();
-            sprintf(ui_buf, "%.2f hPa", bmp.readPressure() / 100);
-
-            *strchr(ui_buf, '.') = ',';
-
-            datalogger_lbl.text = ui_buf;
-            datalogger_window.update(true);
-            u8g2.sendBuffer();
-          }
+          pressure_lbl.text = ui_buf;
+          pressure_window.update(true);
+          u8g2.sendBuffer();
         }
       }
     });
+    // measure_window_listitems[3] = mUI::ListItem("Datenlogger", [](mUI::Window &caller) {
+    //   if (!SD.begin(/*cs=*/5))
+    //   {
+    //     mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "SD-Karte konnte nicht\ngelesen werden!", mUI::MessageBoxType::INFO);
+    //     err.show();
+    //   }
+    //   else if (!bmp.begin(0x76))
+    //   {
+    //     mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
+    //     err.show();
+    //   }
+    //   else
+    //   {
+    //     File datalogger_file = SD.open("logger.csv", FILE_WRITE);
+
+    //     if (!datalogger_file)
+    //     {
+    //       mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "\"logger.csv\" konnte\nnicht erstellt werden!", mUI::MessageBoxType::INFO);
+    //       err.show();
+    //     }
+    //     else
+    //     {
+    //       datalogger_file.println("Test!");
+    //       datalogger_file.close();
+
+    //       SD.end();
+
+    //       mUI::Label datalogger_lbl({4, 25}, {0, 0}, "");
+    //       datalogger_lbl.font = u8g2_font_helvR14_tf;
+    //       mUI::Widget *datalogger_window_widgets[] = {&datalogger_lbl};
+    //       mUI::Window datalogger_window("Datenlogger", test_buttons, sizeof(datalogger_window_widgets) / sizeof(datalogger_window_widgets[0]), datalogger_window_widgets);
+
+    //       while (!test_buttons())
+    //       {
+    //         u8g2.clearBuffer();
+    //         sprintf(ui_buf, "%.2f hPa", bmp.readPressure() / 100);
+
+    //         *strchr(ui_buf, '.') = ',';
+
+    //         datalogger_lbl.text = ui_buf;
+    //         datalogger_window.update(true);
+    //         u8g2.sendBuffer();
+    //       }
+    //     }
+    //   }
+    // });
     measure_window_listitems[4] = mUI::ListItem("Zurück", [](mUI::Window &caller) {
       close_flag = true;
     });
@@ -582,19 +615,19 @@ void setup()
           break;
 
         default:
-          sprintf(ui_buf, "Unbekannter Request:\n\"%c\"", inChar);
-          mUI::drawPopup(ui_buf, 5, 20);
-          u8g2.sendBuffer();
-          delay(1000);
+          // sprintf(ui_buf, "Unbekannter Request:\n\"%c\"", inChar);
+          // mUI::drawPopup(ui_buf, 5, 20);
+          // u8g2.sendBuffer();
+          // delay(1000);
           break;
         }
         break;
 
       default:
-        sprintf(ui_buf, "Unbekannter Befehl:\n\"%c\"", inChar);
-        mUI::drawPopup(ui_buf, 5, 20);
-        u8g2.sendBuffer();
-        delay(1000);
+        // sprintf(ui_buf, "Unbekannter Befehl:\n\"%c\"", inChar);
+        // mUI::drawPopup(ui_buf, 5, 20);
+        // u8g2.sendBuffer();
+        // delay(1000);
         break;
       }
     }
