@@ -51,6 +51,9 @@ Adafruit_BME280 bmp;
 OneWire onewire(6);
 DS18B20 ds(&onewire);
 
+#include <Adafruit_INA260.h>
+Adafruit_INA260 ina260;
+
 bool close_flag = false;
 
 char inChar;
@@ -112,128 +115,170 @@ void setup()
 
     mUI::ListItem measure_window_listitems[5];
 
-    measure_window_listitems[0] = mUI::ListItem("Plot", [](mUI::Window &caller) {
-      if (!bmp.begin(0x76))
-      {
-        mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
-        err.show();
-      }
-      else
-      {
-        mUI::Label plot_lbl({4, 14}, {0, 0}, "");
-        plot_lbl.font = u8g2_font_helvR08_tf;
-        mUI::Widget *plot_window_widgets[] = {&plot_lbl};
-        mUI::Window plot_window("sin(m...)*m...", test_buttons, sizeof(plot_window_widgets) / sizeof(plot_window_widgets[0]), plot_window_widgets);
-
-        float plot = bmp.readPressure();
-        // int previous_y = map(bmp.readplot(), 98100, 98300, HEIGHT - 4, 14);
-        // int y = previous_y;
-
-#define N_YS WIDTH - 40
-
-        // int values[N_YS];
-        std::array<double, N_YS> values;
-        int i = 0;
-        // int y;
-        bool filled = false;
-
-        std::pair<std::array<double, N_YS>::iterator, std::array<double, N_YS>::iterator> minmax;
-        // std::pair<int, int> minmax;
-
-        // Clear array
-        for (double &value : values)
+    measure_window_listitems[0] = mUI::ListItem("Spannung", [](mUI::Window &caller) {
+        if (!ina260.begin())
         {
-          value = 0;
+          mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "INA260 nicht gefunden!", mUI::MessageBoxType::INFO);
+          err.show();
         }
-
-        while (!test_buttons())
+        else
         {
-          plot = bmp.readPressure();
+          mUI::Label temp_lbl({4, 22}, {0, 0}, "");
+          temp_lbl.font = u8g2_font_helvR18_tf;
+          mUI::Widget *temp_window_widgets[] = {&temp_lbl};
+          mUI::Window temp_window("Spannung", test_buttons, sizeof(temp_window_widgets) / sizeof(temp_window_widgets[0]), temp_window_widgets);
 
-          u8g2.clearBuffer();
+          float temp = 0;
 
-          sprintf(ui_buf, "%.2f hPa", plot / 100);
+          int i = 0;
 
-          *strchr(ui_buf, '.') = ',';
-
-          // Calculate min + max
-          minmax = std::minmax_element(values.begin(), values.end());
-
-          // Draw min / max
-          char buf[10];
-          itoa(*minmax.second, buf, sizeof(buf));
-          u8g2.drawStr(4, 14, buf);
-          itoa(*minmax.first, buf, sizeof(buf));
-          u8g2.drawStr(4, HEIGHT - 12, buf);
-
-          values[i] = sin((double)millis() / 120.0) * millis() / 700;
-          // values[i] = map(bmp.readHumidity(), 98100, 98300, HEIGHT - 4, 14);
-
-          // Draw 0 line
-          u8g2.drawLine(20, map(0, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), WIDTH - 20, map(0, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
-
-          if (!filled)
+          while (!test_buttons())
           {
-            //  0 1 2 3 4
-            // +-+-+-+-+-+
-            // |1|2|3|4|6|
-            // +-+-+-+-+-+
-            //          i
-            for (int index = 1; index <= i; index++)
+            u8g2.clearBuffer();
+
+            if (i >= 30)
             {
-              u8g2.drawLine(index + 19, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
-            }
+              i = 0;
+              sprintf(ui_buf, "%.2f V", temp / 30 / 1000);
+              temp = 0;
+
+            char *sp = strchr(ui_buf, '.');
+            *sp = ',';
+
+            temp_lbl.text = ui_buf;
+            temp_window.update(true);
+            u8g2.sendBuffer();
+            
           }
-          else
-          {
-            //  0 1 2    3 4 5         3    4 5 0 1 2
-            // +-+-+--+ +-+-+-+       +-+  +-+-+-+-+--+
-            // |8|9|10| |5|6|7|  ==>  |5|  |6|7|8|9|10|
-            // +-+-+--+ +-+-+-+       +-+  +-+-+-+-+--+
-            //      i                               i
-
-            //  4 5
-            // +-+-+
-            // |6|7|
-            // +-+-+
-            for (int index = i + 2; index <= N_YS; index++)
-            {
-              u8g2.drawLine(index + 19 - i, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20 - i, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+            else{
+              temp += ina260.readBusVoltage();
+              i++;
             }
-
-            //  0
-            // +-+
-            // |8|
-            // +-+
-            std::max(*minmax.first, *minmax.second);
-            if (i < N_YS - 1)
-              u8g2.drawLine(19 + N_YS - i, map(values[N_YS - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), 20 + N_YS - i, map(values[0] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
-
-            //  1 2
-            // +-+--+
-            // |9|10|
-            // +-+--+
-            //    i
-            for (int index = 1; index <= i; index++)
-            {
-              u8g2.drawLine(index + 19 + N_YS - i, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20 + N_YS - i, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
-            }
-          }
-
-          // plot_lbl.text = ui_buf;
-          plot_window.update(true);
-          u8g2.sendBuffer();
-
-          i++;
-
-          if (i > N_YS)
-          {
-            filled = true;
-            i = 0;
-          }
         }
-      }
-    });
+    }}
+    );
+    // measure_window_listitems[0] = mUI::ListItem("Plot", [](mUI::Window &caller) {
+    //   if (!bmp.begin(0x76))
+    //   {
+    //     mUI::MessageBox err = mUI::MessageBox(caller, "Fehler", "BMP280 nicht gefunden!", mUI::MessageBoxType::INFO);
+    //     err.show();
+    //   }
+    //   else
+    //   {
+    //     mUI::Label plot_lbl({4, 14}, {0, 0}, "");
+    //     plot_lbl.font = u8g2_font_helvR08_tf;
+    //     mUI::Widget *plot_window_widgets[] = {&plot_lbl};
+    //     mUI::Window plot_window("sin(m...)*m...", test_buttons, sizeof(plot_window_widgets) / sizeof(plot_window_widgets[0]), plot_window_widgets);
+
+    //     float plot = bmp.readPressure();
+    //     // int previous_y = map(bmp.readplot(), 98100, 98300, HEIGHT - 4, 14);
+    //     // int y = previous_y;
+
+// #define N_YS WIDTH - 40
+
+    //     // int values[N_YS];
+    //     std::array<double, N_YS> values;
+    //     int i = 0;
+    //     // int y;
+    //     bool filled = false;
+
+    //     std::pair<std::array<double, N_YS>::iterator, std::array<double, N_YS>::iterator> minmax;
+    //     // std::pair<int, int> minmax;
+
+    //     // Clear array
+    //     for (double &value : values)
+    //     {
+    //       value = 0;
+    //     }
+
+    //     while (!test_buttons())
+    //     {
+    //       plot = bmp.readPressure();
+
+    //       u8g2.clearBuffer();
+
+    //       sprintf(ui_buf, "%.2f hPa", plot / 100);
+
+    //       *strchr(ui_buf, '.') = ',';
+
+    //       // Calculate min + max
+    //       minmax = std::minmax_element(values.begin(), values.end());
+
+    //       // Draw min / max
+    //       char buf[10];
+    //       itoa(*minmax.second, buf, sizeof(buf));
+    //       u8g2.drawStr(4, 14, buf);
+    //       itoa(*minmax.first, buf, sizeof(buf));
+    //       u8g2.drawStr(4, HEIGHT - 12, buf);
+
+    //       values[i] = sin((double)millis() / 120.0) * millis() / 700;
+    //       // values[i] = map(bmp.readHumidity(), 98100, 98300, HEIGHT - 4, 14);
+
+    //       // Draw 0 line
+    //       u8g2.drawLine(20, map(0, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), WIDTH - 20, map(0, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+
+    //       if (!filled)
+    //       {
+    //         //  0 1 2 3 4
+    //         // +-+-+-+-+-+
+    //         // |1|2|3|4|6|
+    //         // +-+-+-+-+-+
+    //         //          i
+    //         for (int index = 1; index <= i; index++)
+    //         {
+    //           u8g2.drawLine(index + 19, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+    //         }
+    //       }
+    //       else
+    //       {
+    //         //  0 1 2    3 4 5         3    4 5 0 1 2
+    //         // +-+-+--+ +-+-+-+       +-+  +-+-+-+-+--+
+    //         // |8|9|10| |5|6|7|  ==>  |5|  |6|7|8|9|10|
+    //         // +-+-+--+ +-+-+-+       +-+  +-+-+-+-+--+
+    //         //      i                               i
+
+    //         //  4 5
+    //         // +-+-+
+    //         // |6|7|
+    //         // +-+-+
+    //         for (int index = i + 2; index <= N_YS; index++)
+    //         {
+    //           u8g2.drawLine(index + 19 - i, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20 - i, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+    //         }
+
+    //         //  0
+    //         // +-+
+    //         // |8|
+    //         // +-+
+    //         std::max(*minmax.first, *minmax.second);
+    //         if (i < N_YS - 1)
+    //           u8g2.drawLine(19 + N_YS - i, map(values[N_YS - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), 20 + N_YS - i, map(values[0] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+
+    //         //  1 2
+    //         // +-+--+
+    //         // |9|10|
+    //         // +-+--+
+    //         //    i
+    //         for (int index = 1; index <= i; index++)
+    //         {
+    //           u8g2.drawLine(index + 19 + N_YS - i, map(values[index - 1] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14), index + 20 + N_YS - i, map(values[index] * 100, *minmax.first * 100, *minmax.second * 100, HEIGHT - 4, 14));
+    //         }
+    //       }
+
+    //       // plot_lbl.text = ui_buf;
+    //       plot_window.update(true);
+    //       u8g2.sendBuffer();
+
+    //       i++;
+
+    //       if (i > N_YS)
+    //       {
+    //         filled = true;
+    //         i = 0;
+    //       }
+    //     }
+    //   }
+    // });
 
     measure_window_listitems[1] = mUI::ListItem("Temperatur", [](mUI::Window &caller) {
       if (!bmp.begin(0x76))
